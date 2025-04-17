@@ -1,0 +1,77 @@
+Cómo crear un dispositivo headless  con puredata corriendo en  una Raspberry Pi Zero 2w usando el weird audio hat como interfaz de audio.
+
+Para que el parche de puredata se ejecute automaticamente al iniciar el sistema
+
+
+1.Automatizar el inicio del parche del puredata.
+Cada objeto que se desee iniciar por ejemplo DSP debe recibir un mensaje 1 activado por un objeto loadbang.
+[loadbang] - [; pd dsp 1(
+
+Encontrar la ruta del ejecutable si hace falta
+usar comando
+which puredata 
+para obtener la ruta.
+
+Editar archivo de autostart
+sudo nano /etc/xdg/lxsession/LXDE-pi/autostart
+Añadir al final la línea
+ @puredata (mas el nombre del archivo para abrir)
+ejemplo:
+@puredata test.pd
+
+4.Reiniciar para verificar que el programa se ejecute automáticamente.
+
+
+Para que que se guarde la configuración de la interfaz de audio predeterminada en puredata (ejemplo weird hat)
+
+si con “save all settings” no queda guardada  al reiniciar, probar con…
+
+1.Crear el script de inicio
+nano /home/weird/start_pd_patch.sh
+
+Añadir las líneas
+#!/bin/bash
+/usr/bin/pd -alsa -nogui -audiooutdev wm8960soundcard /home/weird/tu_patch.pd
+
+(command o ctrl  “o” y enter para guardar y command o ctrl  “x” para cerrar)
+
+
+Para guardar la configuración de ALSAMIXER si la raspberry se va a reiniciar correctamente desde el reboot o desde el shutdown
+
+sudo alsactl store
+si con este comando la configuración no quedò guardada al reiniciar, probar con…
+
+Para que se habilite el ON y OF left y right del alsamixer que por default cada vez que se reinicializa la raspberry arrancan en MUTE
+ 
+1.Crear un  script
+nano /home/weird/unmute_audio.sh
+Añadir las líneas
+#!/bin/bash
+#Unmute Left and Right Outputs
+
+
+amixer -c 1 set 'Left Out  Mixer DAC’ unmute
+amixer -c 1 set 'Right Out  Mixer DAC’ unmute
+
+(En el caso del weird audio hat- en alsamixer, encuentran los nombres que correspondan a sus salidas, en este caso son estas)
+
+(command o ctrl  “o” y enter para guardar y command o ctrl  “x” para cerrar)
+
+
+2.Crear un ejecutable automático dentro del 
+sudo nano /etc/rc.local
+Añadir las líneas
+sleep 10
+/home/weird/unmute_audio.sh
+(antes del exit 0)
+
+
+(command o ctrl  “o” y enter para guardar y command o ctrl  “x” para cerrar)
+
+
+
+3.Recorda hacer los  scripts que creaste ejecutables con:
+chmod +x /home/weird/start_pd_patch.sh
+chmod +x  /home/weird/unmute_audio.sh
+
+Y todo esto debería bastar 🙂
